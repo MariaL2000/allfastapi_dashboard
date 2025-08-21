@@ -24,10 +24,10 @@ A full-featured FastAPI application using SQLite, JWT authentication, roles & pe
 
 ---
 Data Files
-![Dataset 1](project/1.png)
+![Dataset 1](1.png)
 
 ###UI 2
-![Dataset 2](project/2.png)
+![Dataset 2](2.png)
 
 
 ## Environment Setup
