@@ -23,6 +23,12 @@ A full-featured FastAPI application using SQLite, JWT authentication, roles & pe
 - Models: Users, Roles, UserRoles, Products, Cart, Orders, RefreshTokens
 
 ---
+Data Files
+![Dataset 1](project/1.png)
+
+###UI 2
+![Dataset 2](project/2.png)
+
 
 ## Environment Setup
 
@@ -51,18 +57,7 @@ venv\Scripts\activate
 2️⃣ Install dependencies
 cd project
 pip install -r requirements.txt
-3️⃣ Setup environment: in the env:
-
-SECRET_KEY=change_me_to_strong_secret
-ACCESS_TOKEN_EXPIRE_MINUTES=
-REFRESH_TOKEN_EXPIRE_DAYS=
-DATABASE_URL=sqlite:///./database.db
-GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=http://127.0.0.1:8000/auth/google/callback
-
-
-# Edit .env with your values
+3️⃣ Setup environment: in the env
 4️⃣ Run the application
 uvicorn app:app --reload --port 8000
 5️⃣ Access API docs
@@ -75,12 +70,7 @@ Admin-only routes protected with role-based dependency
 
 Manage users, roles, products, and orders
 
-Data Files
-1️⃣ 1.png
-Description: example dataset for products or users
 
-2️⃣ 2.png
-Description: example dataset for initial cart or orders
 
 Notes
 Google OAuth2 requires GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI.
