@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, Float
 from sqlalchemy.orm import relationship
-from db import Base
+from db.session import Base
 from datetime import datetime
 
 class User(Base):
@@ -42,7 +42,7 @@ class Product(Base):
     image_url = Column(String(500), nullable=True)
     stock = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.now)
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
