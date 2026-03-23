@@ -1,15 +1,15 @@
-import os
-import requests
-from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
-from core.security import create_access_token, verify_password, get_password_hash
-from models import models
+from datetime import datetime, timezone, timedelta
+from secrets import token_urlsafe
+from typing import Optional
+from models.models import User, RefreshToken, UserRole, Role
+from core.security import get_password_hash, verify_password, create_access_token
+from schemas import schemas
 
 class AuthService:
     @staticmethod
-    def authenticate_user(db: Session, email: str, password: str):
-        user = db.query(models.User).filter(models.User.email == email).first()
+    def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
+        user = db.query(User).filter(User.email == email).first()
         if not user or not user.hashed_password:
             return None
         if not verify_password(password, user.hashed_password):
@@ -17,44 +17,76 @@ class AuthService:
         return user
 
     @staticmethod
-    def google_oauth_process(db: Session, code: str):
-        # 1. Exchange code for Google tokens
-        token_data = {
-            "code": code,
-            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
-            "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
-            "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI"),
-            "grant_type": "authorization_code",
-        }
-        resp = requests.post("https://oauth2.googleapis.com/token", data=token_data)
-        if resp.status_code != 200:
-            raise HTTPException(status_code=400, detail="Google authentication failed")
+    def create_user(db: Session, user_in: schemas.UserCreate) -> User:
+        # 1. Crear el usuario base
+        db_user = User(
+            name=user_in.name,
+            email=user_in.email,
+            hashed_password=get_password_hash(user_in.password),
+            is_active=True,
+            is_superuser=False
+        )
+        db.add(db_user)
+        db.flush()  # Para obtener el ID de db_user antes del commit
+
+        # 2. Buscar o crear el rol 'user'
+        role = db.query(Role).filter(Role.name == "user").first()
+        if not role:
+            role = Role(name="user", description="Standard customer access")
+            db.add(role)
+            db.flush()
+
+        # 3. Crear el vínculo en la tabla asociativa (UserRole)
+        # ESTO ES LO QUE LLENA LA LISTA DE ROLES EN TU MODELO
+        new_user_role = UserRole(user_id=db_user.id, role_id=role.id)
+        db.add(new_user_role)
         
-        # 2. Get user info using id_token
-        id_token = resp.json().get("id_token")
-        info = requests.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}").json()
-        email = info.get("email")
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+    
+    @staticmethod
+    def create_refresh_session(db: Session, user_id: int) -> str:
+        # Invalida tokens anteriores del mismo usuario para mayor seguridad (opcional)
+        db.query(RefreshToken).filter(RefreshToken.user_id == user_id).delete()
         
-        # 3. User Upsert
-        user = db.query(models.User).filter(models.User.email == email).first()
-        if not user:
-            user = models.User(
-                name=info.get("name", email.split("@")[0]),
-                email=email,
-                is_active=True
-            )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-            
-        return create_access_token(data={"sub": user.email})
+        token = token_urlsafe(64)
+        expires = datetime.now(timezone.utc) + timedelta(days=30)
+        
+        db_token = RefreshToken(
+            user_id=user_id, 
+            token=token, 
+            expires_at=expires
+        )
+        db.add(db_token)
+        db.commit()
+        return token
 
     @staticmethod
-    def create_refresh_session(db: Session, user_id: int):
-        from secrets import token_urlsafe
-        token = token_urlsafe(48)
+    def revoke_token(db: Session, token: str):
+        db_token = db.query(RefreshToken).filter(RefreshToken.token == token).first()
+        if db_token:
+            db.delete(db_token)
+            db.commit()
+
+    @staticmethod
+    def create_refresh_session(db: Session, user_id: int) -> str:
+        # Opcional: Rotación de tokens (revocar los anteriores al crear uno nuevo)
+        db.query(RefreshToken).filter(
+            RefreshToken.user_id == user_id, 
+            RefreshToken.revoked == False
+        ).update({"revoked": True})
+        
+        token = token_urlsafe(64)
+        # Importante: Asegúrate de que expires_at guarde la zona horaria si tu BD lo soporta
         expires = datetime.now(timezone.utc) + timedelta(days=30)
-        db_token = models.RefreshToken(user_id=user_id, token=token, expires_at=expires)
+        
+        db_token = RefreshToken(
+            user_id=user_id, 
+            token=token, 
+            expires_at=expires,
+            revoked=False
+        )
         db.add(db_token)
         db.commit()
         return token

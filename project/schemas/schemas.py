@@ -6,16 +6,16 @@ from typing import List, Optional
 
 class Token(BaseModel):
     access_token: str
-    token_type: str
-
-class TokenData(BaseModel):
-    email: Optional[str] = None
+    token_type: str = "bearer"
 
 class TokenWithRefresh(Token):
     refresh_token: str
 
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
 class LoginRequest(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 class RefreshRequest(BaseModel):
@@ -32,6 +32,18 @@ class RoleCreate(RoleBase):
 
 class RoleOut(RoleBase):
     id: int
+    name: str
+    description: Optional[str] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class UserRoleOut(BaseModel):
+    """
+    IMPORTANTE: Este schema mapea la tabla intermedia 'user_roles'.
+    Permite que al pedir un Usuario, se vea el objeto 'role' interno.
+    """
+    role: RoleOut
+    
     model_config = ConfigDict(from_attributes=True)
 
 class AssignRoleRequest(BaseModel):
@@ -41,7 +53,7 @@ class AssignRoleRequest(BaseModel):
 # --- SCHEMAS DE USUARIO ---
 
 class UserBase(BaseModel):
-    email: str
+    email: EmailStr
     name: str
 
 class UserCreate(UserBase):
@@ -51,7 +63,10 @@ class UserOut(UserBase):
     id: int
     is_active: bool
     is_superuser: bool
-    roles: List[RoleOut] = []  # Relación con roles
+    # Mapea la relación 'roles' de tu modelo User que apunta a UserRole
+    roles: List[UserRoleOut] = []  
+    created_at: datetime
+    
     model_config = ConfigDict(from_attributes=True)
 
 # --- SCHEMAS DE PRODUCTOS ---
@@ -66,7 +81,7 @@ class ProductBase(BaseModel):
 class ProductCreate(ProductBase):
     pass
 
-class ProductUpdate(BaseModel): # Update suele ser opcional
+class ProductUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     price: Optional[float] = None
@@ -77,6 +92,7 @@ class ProductOut(ProductBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    
     model_config = ConfigDict(from_attributes=True)
 
 # --- SCHEMAS DE CARRITO ---
@@ -91,10 +107,13 @@ class CartItemCreate(CartItemBase):
 class CartItemOut(CartItemBase):
     id: int
     product: ProductOut
+    
     model_config = ConfigDict(from_attributes=True)
 
 class CartOut(BaseModel):
     id: int
-    items: List[CartItemOut]
-    total: float
+    user_id: int
+    items: List[CartItemOut] = []
+    created_at: datetime
+    
     model_config = ConfigDict(from_attributes=True)
