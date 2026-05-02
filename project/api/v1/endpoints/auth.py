@@ -50,7 +50,7 @@ def logout(
 
 @router.post("/refresh", response_model=schemas.Token)
 def refresh_token(
-    payload: schemas.RefreshRequest, # Usando el schema que ya definiste
+    payload: schemas.RefreshRequest, 
     db: Session = Depends(get_db)
 ):
     """Genera un nuevo access_token usando un refresh_token válido."""

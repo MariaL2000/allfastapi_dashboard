@@ -96,7 +96,6 @@ class ProductOut(ProductBase):
     model_config = ConfigDict(from_attributes=True)
 
 # --- SCHEMAS DE CARRITO ---
-
 class CartItemBase(BaseModel):
     product_id: int
     quantity: int

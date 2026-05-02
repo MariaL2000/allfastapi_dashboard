@@ -51,8 +51,6 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     return user
 
 
-
-
 def require_role(allowed_roles: List[str]) -> Callable:
     """
     Verifica si el usuario tiene uno de los roles permitidos.

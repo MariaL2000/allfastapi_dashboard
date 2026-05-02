@@ -56,8 +56,6 @@ class RefreshToken(Base):
     user = relationship("User", back_populates="refresh_tokens")
 
 
-
-
 class Cart(Base):
     __tablename__ = "carts"
     id = Column(Integer, primary_key=True, index=True)

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from db.session import get_db
-from models import models #other way to import...
+from models import models
 from schemas import schemas 
 from core.security import get_current_user
 
